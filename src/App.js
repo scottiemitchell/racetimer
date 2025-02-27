@@ -1999,7 +1999,7 @@ const PhotoFinishSystem = () => {
           <div style={sectionHeader}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#ffffff',
                         textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
-              <span style={{ color: '#457b9d' }}>●</span> LIVE TRACK VIEW
+              <span style={{ color: '#457b9d' }}>●</span> OVERHEAD VIEW
             </h3>
           </div>
           <canvas 

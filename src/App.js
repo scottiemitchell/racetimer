@@ -121,7 +121,7 @@ const CANVAS_HEIGHT = 300; // Increased height for more runners
 const SLICE_WIDTH = 2;
 const RUNNER_SIZE = 10; // Increase runner size
 const BIB_FONT_SIZE = '24px'; // Set the desired font size
-const BIB_TEXT_COLOR = '#09ff00';
+const BIB_TEXT_COLOR = '#ffffff';
 const GAME_DURATION = 120; // 2 minutes in seconds
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);

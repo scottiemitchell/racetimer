@@ -116,12 +116,12 @@ const createRunners = (count) => {
 
 const TOTAL_LAPS = 8;
 const FINISH_LINE_X = 25;
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 300; // Increased height for more runners
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 175; // Increased height for more runners
 const SLICE_WIDTH = 2;
 const RUNNER_SIZE = 10; // Increase runner size
-const BIB_FONT_SIZE = '24px'; // Set the desired font size
-const BIB_TEXT_COLOR = 'green';
+const BIB_FONT_SIZE = '18px'; // Set the desired font size for live cam view
+const BIB_TEXT_COLOR = 'green'; // set the color of the bib numbers for live cam view
 const GAME_DURATION = 120; // 2 minutes in seconds
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
@@ -973,9 +973,9 @@ const PhotoFinishSystem = () => {
   }, [isPlaying, runners, totalLaps]);
 
   const drawClock = (ctx, time) => {
-    ctx.font = '24px monospace';
+    ctx.font = '12px arial';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(formatTime(time), 100, 30);
+    ctx.fillText(formatTime(time), 35, 15);
   };
 
   // Add back canvas initialization without auto-start
@@ -1156,13 +1156,14 @@ const PhotoFinishSystem = () => {
       // Draw bib numbers with proper vertical spacing
       timeSplits.forEach((split, index) => {
         const bibText = `${split.bibNumber}`;
-        ctx.font = '14px arial';
+        ctx.font = 'bold 10px arial';
+        //ctx.fontWeight = 'bold';
         ctx.fillStyle = split.color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         // Position each label with proper spacing
-        const y = 25 + (index * 20); // 20px spacing between labels
+        const y = 10 + (index * 15); // 20px spacing between labels
         ctx.fillText(bibText, x, y);
       });
     });
@@ -1368,11 +1369,11 @@ const PhotoFinishSystem = () => {
           
           // Draw bib number (above runner)
           const bibText = `${runner.number}`;
-          ctx.font = `bold ${BIB_FONT_SIZE} courier`;
+          ctx.font = `bold ${BIB_FONT_SIZE} arial`;
           ctx.fillStyle = BIB_TEXT_COLOR;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          const textY = y - RUNNER_SIZE - 5;
+          const textY = y - RUNNER_SIZE;
           ctx.fillText(bibText, x, textY);
           
           // Draw runner circle
@@ -1414,19 +1415,46 @@ const PhotoFinishSystem = () => {
             if (Math.abs(x - sliceX) <= RUNNER_SIZE * 1.5) {  // Increased from RUNNER_SIZE to RUNNER_SIZE * 1.5
               const y = animatedPos.y * CANVAS_HEIGHT / 100;
               
-              // Draw runner as a circle
+              // Draw head (small circle above runner)
               tempCtx.beginPath();
               tempCtx.fillStyle = runner.color;
-              tempCtx.arc(SLICE_WIDTH/2, y, RUNNER_SIZE, 0, Math.PI * 2);
+              // Make the head more visible
+              tempCtx.arc(SLICE_WIDTH, y - RUNNER_SIZE - 3, RUNNER_SIZE * 0.7, 0, Math.PI * 2);
               tempCtx.fill();
+              
+              // Draw runner body as a rectangle instead of circle
+              tempCtx.fillStyle = runner.color;
+              // Explicitly draw a rectangle for the body
+              tempCtx.fillRect(
+                SLICE_WIDTH/2 - RUNNER_SIZE/2, 
+                y - RUNNER_SIZE/2, 
+                RUNNER_SIZE *1.5, 
+                RUNNER_SIZE * 6
+              );
+              
+              /*Draw left leg (vertical line) - make it more visible
+              tempCtx.beginPath();
+              tempCtx.strokeStyle = runner.color;
+              tempCtx.lineWidth = 4; // Thicker line
+              tempCtx.moveTo(SLICE_WIDTH/2 - RUNNER_SIZE/2, y + RUNNER_SIZE/2);
+              tempCtx.lineTo(SLICE_WIDTH/2 - RUNNER_SIZE/2, y + RUNNER_SIZE * 2.5);
+              tempCtx.stroke();
+              
+              // Draw right leg (vertical line) - make it more visible
+              tempCtx.beginPath();
+              tempCtx.strokeStyle = runner.color;
+              tempCtx.lineWidth = 4; // Thicker line
+              tempCtx.moveTo(SLICE_WIDTH/2 + RUNNER_SIZE/2, y + RUNNER_SIZE/2);
+              tempCtx.lineTo(SLICE_WIDTH/2 + RUNNER_SIZE/2, y + RUNNER_SIZE * 2.5);
+              tempCtx.stroke();
 
-              // Add bib number in the center of the runner
+              /* Add bib number in the center of the runner
               tempCtx.font = 'bold 10px monospace';
               tempCtx.fillStyle = '#000000';
               tempCtx.textAlign = 'center';
               tempCtx.textBaseline = 'middle';
               tempCtx.fillText(runner.number.toString(), SLICE_WIDTH/2, y);
-
+              */
               // Record crossing time with debouncing
               if (!runnerCrossingsRef.current[runner.number]) {
                 runnerCrossingsRef.current[runner.number] = [];
@@ -1735,12 +1763,12 @@ const PhotoFinishSystem = () => {
     
     // Draw time label above
     //ctx.fillStyle = '#00A3FF';
-    ctx.font = '16px monospace';
-    ctx.color = 'black';
+    ctx.font = '12px arial';
+    ctx.fillStyle = 'black';
     const timeText = formatTime(time);
     const textWidth = ctx.measureText(timeText).width;
     const x = Math.min(Math.max(sliceIndex * SLICE_WIDTH - scrollOffset - textWidth / 2, 10), CANVAS_WIDTH - textWidth - 10);
-    ctx.fillText(timeText, x, 20);
+    ctx.fillText(timeText, x-30, 10);
   };
 
   // Add a new state to track if music is explicitly turned off by user

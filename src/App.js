@@ -121,7 +121,7 @@ const CANVAS_HEIGHT = 300; // Increased height for more runners
 const SLICE_WIDTH = 2;
 const RUNNER_SIZE = 10; // Increase runner size
 const BIB_FONT_SIZE = '24px'; // Set the desired font size
-const BIB_TEXT_COLOR = '#ffffff';
+const BIB_TEXT_COLOR = 'orange';
 const GAME_DURATION = 120; // 2 minutes in seconds
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
@@ -1621,7 +1621,7 @@ const PhotoFinishSystem = () => {
         runningSoundRef.current.onended = null;
         
         // Set volume and play
-        runningSoundRef.current.volume = 0.7;
+        runningSoundRef.current.volume = 0.07;
         
         // Log audio state
         console.log("Running sound readyState:", runningSoundRef.current.readyState);
@@ -1736,6 +1736,7 @@ const PhotoFinishSystem = () => {
     // Draw time label above
     ctx.fillStyle = '#00A3FF';
     ctx.font = '16px monospace';
+    ctx.color = 'black';
     const timeText = formatTime(time);
     const textWidth = ctx.measureText(timeText).width;
     const x = Math.min(Math.max(sliceIndex * SLICE_WIDTH - scrollOffset - textWidth / 2, 10), CANVAS_WIDTH - textWidth - 10);

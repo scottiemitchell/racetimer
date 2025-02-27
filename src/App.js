@@ -1164,7 +1164,7 @@ const PhotoFinishSystem = () => {
         
         // Position each label with proper spacing
         const y = 10 + (index * 15); // 20px spacing between labels
-        ctx.fillText(bibText, x, y);
+        ctx.fillText(bibText, x-5, y);
       });
     });
   }, [splits, deletedSplits, runners, totalLaps]);

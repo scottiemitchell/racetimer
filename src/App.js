@@ -510,6 +510,7 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
           zIndex: 1, // Set higher zIndex to be in front of birds
           width: '300px', // Adjust size as needed
           opacity: 1.0, // Optional: make it slightly transparent
+          animation: 'rotateWatch1 6s ease-in-out infinite'
         }} 
       />
       <img 
@@ -523,6 +524,7 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
           zIndex: 1, // Set higher zIndex to be in front of birds
           width: '300px', // Adjust size as needed
           opacity: 1.0, // Optional: make it slightly transparent
+          animation: 'rotateWatch2 6s ease-in-out infinite'
         }} 
       />
       <h1 style={{
@@ -535,9 +537,37 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
         position: 'relative',
         zIndex: 2, // Ensure it's above the stopwatch images
       }}>
-        <span style={{ marginRight: '10px' }}>RACE</span>
-        <span style={{ marginRight: '5px' }}>TIMER</span>
+        <span style={{ 
+          marginRight: '10px',
+          display: 'inline-block',
+          animation: 'breathing 6s ease-in-out infinite'
+        }}>RACETIMER</span>
+        
       </h1>
+      
+      {/* Add the breathing animation keyframes */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes breathing {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+          }
+          
+          @keyframes rotateWatch1 {
+            0% { transform: translateY(-50%) rotate(7deg) scaleX(-1); }
+            50% { transform: translateY(-50%) rotate(5deg) scaleX(-1); }
+            100% { transform: translateY(-50%) rotate(7deg) scaleX(-1); }
+          }
+          
+          @keyframes rotateWatch2 {
+            0% { transform: translateY(-50%) rotate(-7deg); }
+            50% { transform: translateY(-50%) rotate(-5deg); }
+            100% { transform: translateY(-50%) rotate(-7deg); }
+          }
+        `
+      }} />
+      
       <div style={{
         display: 'flex',
         gap: '20px',

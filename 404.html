@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <script>
+    // Single page app redirection script for GitHub Pages
+    // Modified from https://github.com/rafgraph/spa-github-pages
+    (function() {
+      // This redirects to the correct URL when GitHub Pages serves 404.html
+      // for paths that are supposed to be handled by React Router
+      var pathSegments = window.location.pathname.split('/');
+      var repoName = 'racetimer';
+      var segmentCount = 0;
+      
+      // Count path segments after repoName
+      for (var i = 0; i < pathSegments.length; i++) {
+        if (pathSegments[i] === repoName) {
+          segmentCount = pathSegments.length - i - 1;
+          break;
+        }
+      }
+      
+      var replacement = '';
+      for (var i = 0; i < segmentCount; i++) {
+        replacement += '../';
+      }
+      
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, -segmentCount).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(segmentCount).join('/') +
+        (l.search ? '&' + l.search.slice(1) : '') +
+        l.hash
+      );
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecting to the app...</p>
+</body>
+</html> 

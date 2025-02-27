@@ -121,7 +121,7 @@ const CANVAS_HEIGHT = 300; // Increased height for more runners
 const SLICE_WIDTH = 2;
 const RUNNER_SIZE = 10; // Increase runner size
 const BIB_FONT_SIZE = '24px'; // Set the desired font size
-const BIB_TEXT_COLOR = 'orange';
+const BIB_TEXT_COLOR = 'green';
 const GAME_DURATION = 120; // 2 minutes in seconds
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
@@ -1320,11 +1320,11 @@ const PhotoFinishSystem = () => {
       const squareHeight = 10; // Height of each checkerboard square
       
       // Draw the base white finish line 
-      ctx.fillStyle = 'rgba(255, 255, 255)'; // White
+      ctx.fillStyle = 'rgba(255, 255, 255, 1.0)'; // White
       ctx.fillRect(finishX - finishWidth/2, 0, finishWidth, CANVAS_HEIGHT);
       
       // Now overlay the checkerboard pattern 
-      ctx.fillStyle = 'rgba(0, 0, 0)'; // Black 
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'; // Black 
       for (let y = 0; y < CANVAS_HEIGHT; y += squareHeight * 2) {
         // Left square
         ctx.fillRect(
@@ -1734,7 +1734,7 @@ const PhotoFinishSystem = () => {
     ctx.stroke();
     
     // Draw time label above
-    ctx.fillStyle = '#00A3FF';
+    //ctx.fillStyle = '#00A3FF';
     ctx.font = '16px monospace';
     ctx.color = 'black';
     const timeText = formatTime(time);

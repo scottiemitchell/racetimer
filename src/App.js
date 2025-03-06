@@ -556,7 +556,7 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
           
           @keyframes rotateWatch1 {
             0% { transform: translateY(-50%) rotate(7deg) scaleX(-1); }
-            50% { transform: translateY(-50%) rotate(5deg) scaleX(-1); }
+            50% { transform: translateY(-50%) rotate(5deg) xscaleX(-1); }
             100% { transform: translateY(-50%) rotate(7deg) scaleX(-1); }
           }
           
@@ -798,6 +798,8 @@ const PhotoFinishSystem = () => {
   const [gameTime, setGameTime] = useState(GAME_DURATION);
   const [totalLaps, setTotalLaps] = useState(TOTAL_LAPS);
   const [runners, setRunners] = useState([]);
+  // Add state for cursor Y position
+  const [cursorY, setCursorY] = useState(null);
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameStatus, setGameStatus] = useState('waiting');
   const [goodSplits, setGoodSplits] = useState(0);
@@ -1259,6 +1261,11 @@ const PhotoFinishSystem = () => {
     
     const rect = photoFinishCanvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    // Scale the y coordinate to match canvas coordinates
+    const normalizedY = (y / rect.height) * CANVAS_HEIGHT;
+    setCursorY(normalizedY);
+    
     const normalizedX = (x / rect.width) * CANVAS_WIDTH + photoFinishScroll;
     const sliceIndex = Math.floor(normalizedX / SLICE_WIDTH);
     
@@ -1544,14 +1551,15 @@ const PhotoFinishSystem = () => {
         if (selectedIndex >= 0) {
           const x = selectedIndex * SLICE_WIDTH - photoFinishScroll;
           if (x >= -SLICE_WIDTH && x <= CANVAS_WIDTH) {
-            drawTimeLine(ctx, selectedIndex, selectedTime, photoFinishScroll);
+            drawTimeLine(ctx, selectedIndex, selectedTime, photoFinishScroll, cursorY);
           }
         }
       }
     };
 
     drawPhotoFinish();
-  }, [currentTime, selectedTime, splits, drawSplits, photoFinishScroll, difficulty]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTime, selectedTime, splits, drawSplits, photoFinishScroll, difficulty, cursorY]);
 
   // Fix the game timer effect to properly handle time running out
   useEffect(() => {
@@ -1782,17 +1790,26 @@ const PhotoFinishSystem = () => {
   };
 
   // Add back the drawTimeLine function that was accidentally removed
-  const drawTimeLine = (ctx, sliceIndex, time, scrollOffset) => {
-    // Draw vertical blue line
-    ctx.strokeStyle = '#00A3FF';
+  const drawTimeLine = (ctx, sliceIndex, time, scrollOffset, cursorY = null) => {
+    // Draw vertical red line
+    ctx.strokeStyle = '#FF0000';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(sliceIndex * SLICE_WIDTH - scrollOffset, 0);
     ctx.lineTo(sliceIndex * SLICE_WIDTH - scrollOffset, CANVAS_HEIGHT);
     ctx.stroke();
     
+    // Draw horizontal crosshair dash if cursor position is available
+    if (cursorY !== null) {
+      const x = sliceIndex * SLICE_WIDTH - scrollOffset;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x - 6, cursorY);
+      ctx.lineTo(x + 6, cursorY);
+      ctx.stroke();
+    }
+    
     // Draw time label above
-    //ctx.fillStyle = '#00A3FF';
     ctx.font = '12px arial';
     ctx.fillStyle = 'black';
     const timeText = formatTime(time);
@@ -1900,6 +1917,89 @@ const PhotoFinishSystem = () => {
       }
     };
   }, [difficulty]);
+
+  // Add state for drag functionality
+  const [isDraggingTimeLine, setIsDraggingTimeLine] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [dragStartX, setDragStartX] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [initialSelectedTime, setInitialSelectedTime] = useState(null);
+
+  // Add mouse down handler for the timeline
+  const handlePhotoFinishMouseDown = (e) => {
+    if (!photoFinishCanvasRef.current || selectedTime === null) return;
+    
+    // Start dragging immediately when clicking anywhere on the photo finish canvas
+    // if a time is already selected
+    setIsDraggingTimeLine(true);
+    
+    // Also update the time immediately on mousedown to the position clicked
+    const rect = photoFinishCanvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    // Scale the y coordinate to match canvas coordinates
+    const normalizedY = (y / rect.height) * CANVAS_HEIGHT;
+    setCursorY(normalizedY);
+    
+    const normalizedX = (x / rect.width) * CANVAS_WIDTH + photoFinishScroll;
+    const sliceIndex = Math.floor(normalizedX / SLICE_WIDTH);
+    
+    if (sliceIndex >= 0 && sliceIndex < timeSlicesRef.current.length) {
+      const newTime = timeSlicesRef.current[sliceIndex];
+      setSelectedTime(newTime);
+      setDisplayTime(newTime);
+    }
+    
+    // Prevent default browser behavior that might interfere with dragging
+    e.preventDefault();
+  };
+
+  // Add mouse move handler for timeline dragging
+  const handlePhotoFinishMouseMove = (e) => {
+    if (!isDraggingTimeLine || !photoFinishCanvasRef.current) return;
+    
+    const rect = photoFinishCanvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    // Scale the y coordinate to match canvas coordinates
+    const normalizedY = (y / rect.height) * CANVAS_HEIGHT;
+    setCursorY(normalizedY);
+    
+    const normalizedX = (x / rect.width) * CANVAS_WIDTH + photoFinishScroll;
+    // eslint-disable-next-line no-unused-vars
+    const sliceIndex = Math.floor(normalizedX / SLICE_WIDTH);
+    
+    // Directly set time based on current mouse position
+    if (sliceIndex >= 0 && sliceIndex < timeSlicesRef.current.length) {
+      const newTime = timeSlicesRef.current[sliceIndex];
+      setSelectedTime(newTime);
+      setDisplayTime(newTime);
+    }
+    
+    e.preventDefault();
+  };
+
+  // Add mouse up handler to end dragging
+  const handlePhotoFinishMouseUp = (e) => {
+    if (isDraggingTimeLine) {
+      setIsDraggingTimeLine(false);
+      
+      // Focus and select the bib input
+      setTimeout(() => {
+        if (bibInputRef.current) {
+          bibInputRef.current.focus();
+          bibInputRef.current.select();
+        }
+      }, 0);
+    }
+  };
+
+  // Add mouse leave handler to end dragging when mouse leaves the canvas
+  const handlePhotoFinishMouseLeave = (e) => {
+    if (isDraggingTimeLine) {
+      setIsDraggingTimeLine(false);
+    }
+  };
 
   return (
     <div className="main-container">
@@ -2021,7 +2121,10 @@ const PhotoFinishSystem = () => {
             onClick={handlePhotoFinishClick}
             onWheel={handlePhotoFinishScroll}
             onMouseEnter={() => setIsPhotoFinishHovered(true)}
-            onMouseLeave={() => setIsPhotoFinishHovered(false)}
+            onMouseLeave={handlePhotoFinishMouseLeave}
+            onMouseDown={handlePhotoFinishMouseDown}
+            onMouseMove={handlePhotoFinishMouseMove}
+            onMouseUp={handlePhotoFinishMouseUp}
           />
         </div>
 

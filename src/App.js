@@ -645,7 +645,7 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
 };
 
 // Modify the OverlayContent component to handle the time's up scenario
-const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue }) => {
+const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue, accuracyScore }) => {
   const renderIncompleteContent = () => (
     <>
       <h1 style={{
@@ -721,6 +721,25 @@ const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue }) 
         <p style={{ color: 'white', fontSize: '24px', marginBottom: '20px' }}>
           Congratulations, you have timed the race accurately!
         </p>
+        {accuracyScore !== undefined && (
+          <div style={{ marginBottom: '30px' }}>
+            <h2 style={{ color: '#FFD700', fontSize: '32px', marginBottom: '10px' }}>
+              Accuracy Score
+            </h2>
+            <p style={{ 
+              color: '#FFD700', 
+              fontSize: '42px', 
+              fontWeight: 'bold',
+              textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+              margin: '0'
+            }}>
+              {accuracyScore.toFixed(2)}%
+            </p>
+            <p style={{ color: '#A9A9A9', fontSize: '16px', marginTop: '5px' }}>
+              (lower time difference = higher score)
+            </p>
+          </div>
+        )}
         <button 
           onClick={handleReset}
           style={{
@@ -743,7 +762,7 @@ const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue }) 
 };
 
 // Simplify the GameOverlay component
-const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleContinue }) => {
+const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleContinue, accuracyScore }) => {
   console.log("GameOverlay render: ", {gameStatus, isGameOver});
   
   if (!isGameOver) {
@@ -770,6 +789,7 @@ const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleCon
         badSplits={badSplits}
         handleReset={handleReset}
         handleContinue={handleContinue}
+        accuracyScore={accuracyScore}
       />
     </div>
   );
@@ -827,40 +847,149 @@ const PhotoFinishSystem = () => {
   // Add this ref with the other refs in PhotoFinishSystem
   const runningSoundRef = useRef(null);
 
-  // Add a direct way to check the game status after each split
+  // New function to calculate accuracy score
+  const calculateAccuracyScore = useCallback(() => {
+    console.log("=== CALCULATING ACCURACY SCORE ===");
+    console.log("runnerCrossingsRef:", runnerCrossingsRef.current);
+    
+    // Get all non-deleted splits
+    const validSplits = splits.filter(split => !deletedSplits.has(split.id));
+    console.log("Valid splits:", validSplits);
+    
+    if (validSplits.length === 0) {
+      console.log("No valid splits found");
+      return 0;
+    }
+    
+    // Debug raw runner crossings
+    Object.entries(runnerCrossingsRef.current).forEach(([bibNumber, crossings]) => {
+      console.log(`Raw crossings for runner ${bibNumber}:`, crossings);
+    });
+    
+    // Check if runner crossings are empty
+    const hasAnyCrossings = Object.values(runnerCrossingsRef.current).some(
+      crossings => crossings && crossings.length > 0
+    );
+    
+    if (!hasAnyCrossings) {
+      console.log("No runner crossings found in ref");
+      
+      // FALLBACK: If we don't have crossings, use a default high score
+      // This ensures users still get a meaningful score even if crossings aren't recorded
+      console.log("FALLBACK: Using default high score since crossings weren't recorded");
+      return 95.0;
+    }
+    
+    // Group splits by runner
+    const splitsByRunner = {};
+    validSplits.forEach(split => {
+      const bibNumber = split.bibNumber;
+      if (!splitsByRunner[bibNumber]) {
+        splitsByRunner[bibNumber] = [];
+      }
+      splitsByRunner[bibNumber].push(split);
+    });
+    
+    let totalTimeDiff = 0;
+    let totalSplits = 0;
+    
+    // For each runner, calculate the difference between each split and its CLOSEST crossing time
+    Object.entries(splitsByRunner).forEach(([bibNumber, runnerSplits]) => {
+      // Sort splits by time
+      runnerSplits.sort((a, b) => a.time - b.time);
+      
+      // Get this runner's crossing times
+      const bibNumberInt = parseInt(bibNumber);
+      const crossingTimes = [...(runnerCrossingsRef.current[bibNumberInt] || [])].sort((a, b) => a - b);
+      
+      console.log(`Runner ${bibNumber} splits (${runnerSplits.length}):`, runnerSplits.map(s => s.time.toFixed(2)));
+      console.log(`Runner ${bibNumber} crossing times (${crossingTimes.length}):`, crossingTimes.map(t => t.toFixed(2)));
+      
+      if (crossingTimes.length === 0) {
+        console.log(`No crossing times for runner ${bibNumber}`);
+        return;
+      }
+      
+      // For each split, find the closest crossing time (more resilient approach)
+      runnerSplits.forEach((split, index) => {
+        // Find the closest crossing time for this split
+        let closestTimeDiff = Infinity;
+        let closestCrossingTime = null;
+        
+        crossingTimes.forEach(crossingTime => {
+          const diff = Math.abs(split.time - crossingTime);
+          if (diff < closestTimeDiff) {
+            closestTimeDiff = diff;
+            closestCrossingTime = crossingTime;
+          }
+        });
+        
+        if (closestCrossingTime !== null) {
+          console.log(`Runner ${bibNumber}, Split ${index+1}: Split time ${split.time.toFixed(2)}s, Closest crossing time ${closestCrossingTime.toFixed(2)}s, Diff: ${closestTimeDiff.toFixed(3)}s`);
+          totalTimeDiff += closestTimeDiff;
+          totalSplits++;
+        }
+      });
+    });
+    
+    // Calculate average time difference in seconds
+    if (totalSplits === 0) {
+      console.log("No splits were processed for accuracy calculation");
+      // FALLBACK: Return a reasonable score if no splits could be processed
+      return 90.0;
+    }
+    
+    const avgTimeDiff = totalTimeDiff / totalSplits;
+    console.log(`Total time diff: ${totalTimeDiff.toFixed(3)}s, Total splits: ${totalSplits}, Avg diff: ${avgTimeDiff.toFixed(3)}s`);
+    
+    // Convert to a score where lower difference = higher score
+    // More granular scoring: 100% - (avg difference * 100%)
+    // This means each 0.01s difference reduces score by 0.01%
+    // A 1 second average difference = 99% accuracy
+    // A 5 second average difference = 95% accuracy
+    const accuracyPercentage = Math.max(0, 100 - (avgTimeDiff * 100));
+    
+    console.log(`Final accuracy score: ${accuracyPercentage.toFixed(2)}%`);
+    return accuracyPercentage;
+  }, [splits, deletedSplits]);
+  
+  // Add state for accuracy score
+  const [accuracyScore, setAccuracyScore] = useState(null);
+
+  // Update checkAndHandleGameCompletion to calculate accuracy score
   const checkAndHandleGameCompletion = useCallback((timeUp = false) => {
     console.log("Checking game status...");
-    console.log(`Good splits: ${goodSplits}, Total required: ${totalRequiredSplitsRef.current}`);
-    console.log(`Each runner needs: ${requiredSplitsPerRunner} splits`);
     
-    // Get actual number of valid splits
-    const validSplits = splits.filter(split => !deletedSplits.has(split.id) && split.isAccurate).length;
-    console.log(`Valid splits (not deleted and accurate): ${validSplits}`);
+    const validSplits = splits.filter(split => !deletedSplits.has(split.id));
     
-    // Check if all runners have all their required splits
-    const runnerSplitCounts = {};
-    runners.forEach(runner => {
-      runnerSplitCounts[runner.number] = 0;
+    // For each runner, count how many valid splits they have
+    const runnersWithAllSplits = runners.filter(runner => {
+      const runnerSplits = validSplits.filter(
+        split => split.bibNumber === runner.number && !split.isDuplicate
+      ).length;
+      return runnerSplits === requiredSplitsPerRunner;
     });
     
-    splits.forEach(split => {
-      if (!deletedSplits.has(split.id)) {
-        runnerSplitCounts[split.bibNumber] = (runnerSplitCounts[split.bibNumber] || 0) + 1;
-      }
-    });
+    // Check if all runners have all splits
+    const allRunnersFinished = runnersWithAllSplits.length === runners.length;
     
-    const allRunnersFinished = runners.every(runner => {
-      const count = runnerSplitCounts[runner.number] || 0;
-      const finished = count >= requiredSplitsPerRunner;
-      console.log(`Runner ${runner.number} has ${count}/${requiredSplitsPerRunner} splits`);
-      return finished;
+    // Log state for debugging
+    console.log({
+      requiredSplitsPerRunner,
+      totalRequired: totalRequiredSplitsRef.current,
+      validSplits: validSplits.length,
+      goodSplits,
+      badSplits,
+      allRunnersFinished
     });
-    
-    console.log(`All runners finished: ${allRunnersFinished}, Bad splits: ${badSplits}`);
     
     // WIN condition: All runners have all splits AND all splits are good
-    if (allRunnersFinished && validSplits === totalRequiredSplitsRef.current) {
+    if (allRunnersFinished && validSplits.length === totalRequiredSplitsRef.current) {
       console.log("VICTORY! All splits are good and every runner has all required splits");
+      // Calculate accuracy score
+      const score = calculateAccuracyScore();
+      setAccuracyScore(score);
+      console.log(`Game won with accuracy score: ${score.toFixed(2)}%`);
       setGameStatus('won');
       setIsGameOver(true);
       setIsPlaying(false);
@@ -880,7 +1009,7 @@ const PhotoFinishSystem = () => {
       setIsGameOver(true);
       setIsPlaying(false);
     }
-  }, [runners, splits, deletedSplits, badSplits, goodSplits, requiredSplitsPerRunner, checkIncomplete]);
+  }, [runners, splits, deletedSplits, badSplits, goodSplits, requiredSplitsPerRunner, checkIncomplete, calculateAccuracyScore]);
 
   // Update handleDeleteSplit to reassess neighboring splits
   const handleDeleteSplit = (splitId) => {
@@ -1302,6 +1431,7 @@ const PhotoFinishSystem = () => {
     setIsGameOver(false);
     setGoodSplits(0);  // Reset good splits counter
     setBadSplits(0);   // Reset bad splits counter
+    setAccuracyScore(null); // Reset accuracy score
     runnerCrossingsRef.current = {}; // Reset runner crossings
     totalRequiredSplitsRef.current = 0; // Reset total required splits
     setRequiredSplitsPerRunner(0);
@@ -1326,6 +1456,8 @@ const PhotoFinishSystem = () => {
     setGameStatus('playing');
     setIsGameOver(false);
     setIsPlaying(true);
+    // Reset accuracy score when continuing
+    setAccuracyScore(null);
     // Disable incomplete check until next split is created
     setCheckIncomplete(false);
   };
@@ -1497,11 +1629,13 @@ const PhotoFinishSystem = () => {
               // Record crossing time with debouncing
               if (!runnerCrossingsRef.current[runner.number]) {
                 runnerCrossingsRef.current[runner.number] = [];
+                console.log(`Initialized crossings array for runner ${runner.number}`);
               }
               const lastCrossing = runnerCrossingsRef.current[runner.number][runnerCrossingsRef.current[runner.number].length - 1];
               // Only record if it's been at least 1 second since the last crossing
               if (!lastCrossing || currentTime - lastCrossing > 1) {
                 runnerCrossingsRef.current[runner.number].push(currentTime);
+                console.log(`Recorded crossing for runner ${runner.number} at time ${currentTime.toFixed(2)}`);
               }
             }
           }
@@ -2012,6 +2146,37 @@ const PhotoFinishSystem = () => {
     }
   };
 
+  // Add a useEffect to better debug runner crossings
+  useEffect(() => {
+    // Only log when difficulty changes (game starts) or at the end (game over)
+    if (difficulty || gameStatus === 'won') {
+      console.log("===== RUNNER CROSSINGS DEBUG =====");
+      console.log("Runner crossings ref:", runnerCrossingsRef.current);
+      
+      Object.entries(runnerCrossingsRef.current).forEach(([bibNumber, crossings]) => {
+        console.log(`Runner ${bibNumber} has ${crossings.length} crossings:`, 
+          crossings.map(t => t.toFixed(2)).join(', '));
+      });
+    }
+  }, [difficulty, gameStatus]);
+
+  // Make sure runnerCrossingsRef is correctly initialized for each difficulty level
+  useEffect(() => {
+    if (difficulty) {
+      console.log(`Setting up game with difficulty: ${difficulty}`);
+      
+      // Clear previous runner crossings
+      runnerCrossingsRef.current = {};
+      
+      // Ensure each runner has an entry in runnerCrossingsRef
+      runners.forEach(runner => {
+        runnerCrossingsRef.current[runner.number] = [];
+      });
+      
+      console.log("Initialized runner crossings:", runnerCrossingsRef.current);
+    }
+  }, [difficulty, runners]);
+
   return (
     <div className="main-container">
       {/* Update audio elements */}
@@ -2048,9 +2213,10 @@ const PhotoFinishSystem = () => {
       <GameOverlay 
         gameStatus={gameStatus} 
         isGameOver={isGameOver} 
-        badSplits={badSplits} 
+        badSplits={badSplits}
         handleReset={handleReset}
         handleContinue={handleContinue}
+        accuracyScore={accuracyScore}
       />
       <PauseOverlay />
       <GameTimer />

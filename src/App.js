@@ -3,10 +3,11 @@ import './index.css';
 //import raceTimerBackground from './RaceTimerBackground.png';
 import raceTimerBackground from './images/race-background.png';
 import birdsImage from './images/Birds.png';
-import bgMusic from './audio/khoyu-hui-dhun.mp3'; // You'll need to add this file to your project
-import starterPistolSound from './audio/starter-gun.mp3'; // Add this new import
+import bgMusic from './audio/khoyu-hui-dhun.mp3';
+import countdownMusic from './audio/countdown.mp3'; // Add new countdown music import
+import starterPistolSound from './audio/starter-gun.mp3';
 import stopwatchImage from './images/Stopwatch.png'
-import runningSoundFile from './audio/running-sound.mp3'; // Add this new import
+import runningSoundFile from './audio/running-sound.mp3';
 // Replace the fancy card components with basic divs, or if you want to keep the UI components,
 // we can create simplified versions:
 
@@ -776,8 +777,9 @@ const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleCon
 
 const PhotoFinishSystem = () => {
   // Add audio ref and state at the PhotoFinishSystem level
-  const audioRef = useRef(null);
-  const pistolSoundRef = useRef(null); // Add ref for pistol sound
+  const menuMusicRef = useRef(null);  // Rename to menuMusicRef for clarity
+  const gameMusicRef = useRef(null);  // Add new ref for game music
+  const pistolSoundRef = useRef(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   
   // Add difficulty state
@@ -1313,8 +1315,8 @@ const PhotoFinishSystem = () => {
     }
 
     // Adjust volume back to difficulty selection level
-    if (audioRef.current && isMusicPlaying) {
-      audioRef.current.volume = 0.7; // Restore to full volume
+    if (menuMusicRef.current && isMusicPlaying) {
+      menuMusicRef.current.volume = 0.7; // Restore to full volume
     }
   };
 
@@ -1664,8 +1666,8 @@ const PhotoFinishSystem = () => {
     setRunners(newRunners);
     
     // Adjust audio volume when entering the game (don't stop it)
-    if (audioRef.current && isMusicPlaying) {
-      audioRef.current.volume = 0.15; // Reduce volume to 15%
+    if (menuMusicRef.current && isMusicPlaying) {
+      menuMusicRef.current.volume = 0.15; // Reduce volume to 15%
     }
     
     // Play starter pistol sound at full volume
@@ -1821,58 +1823,67 @@ const PhotoFinishSystem = () => {
   // Add a new state to track if music is explicitly turned off by user
   const [userToggledOff, setUserToggledOff] = useState(false);
 
-  // Modify the toggleMusic function to track explicit user choice
+  // Modify the toggleMusic function to handle both audio tracks
   const toggleMusic = () => {
-    const audioElement = audioRef.current;
-    if (audioElement) {
-      if (isMusicPlaying) {
-        audioElement.pause();
-        setIsMusicPlaying(false);
-        setUserToggledOff(true); // Track that user explicitly turned it off
-      } else {
-        audioElement.play()
+    if (isMusicPlaying) {
+      // Stop both audio tracks
+      if (menuMusicRef.current) menuMusicRef.current.pause();
+      if (gameMusicRef.current) gameMusicRef.current.pause();
+      setIsMusicPlaying(false);
+      setUserToggledOff(true);
+    } else {
+      // Play the appropriate track based on current game state
+      const activeAudio = difficulty ? gameMusicRef.current : menuMusicRef.current;
+      if (activeAudio) {
+        activeAudio.play()
           .then(() => {
             setIsMusicPlaying(true);
-            setUserToggledOff(false); // Reset when user explicitly turns it on
-            // Set appropriate volume based on current screen
-            audioElement.volume = difficulty ? 0.15 : 0.7;
+            setUserToggledOff(false);
+            activeAudio.volume = difficulty ? 0.15 : 0.7;
           })
           .catch(error => console.log("Play failed:", error));
       }
     }
   };
 
-  // Modify the useEffect for auto-play to respect user's explicit choice
+  // Modify the useEffect for auto-play to handle both tracks
   useEffect(() => {
-    const audioElement = audioRef.current;
+    const menuAudio = menuMusicRef.current;
+    const gameAudio = gameMusicRef.current;
     
     const attemptPlay = () => {
-      if (audioElement && !userToggledOff) { // Only attempt auto-play if user hasn't explicitly turned it off
-        audioElement.volume = 0.7; // Set initial volume
+      if (!userToggledOff && isMusicPlaying) {
+        const activeAudio = difficulty ? gameAudio : menuAudio;
+        const inactiveAudio = difficulty ? menuAudio : gameAudio;
         
-        const playPromise = audioElement.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsMusicPlaying(true); // Update state when music starts successfully
-            })
-            .catch(error => {
-              console.log("Autoplay was prevented:", error);
-              // Don't update state, will try again with user interaction
-            });
+        if (activeAudio && inactiveAudio) {
+          // Stop the inactive track
+          inactiveAudio.pause();
+          inactiveAudio.currentTime = 0;
+          
+          // Play the active track
+          activeAudio.volume = difficulty ? 0.15 : 0.7;
+          const playPromise = activeAudio.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log(`${difficulty ? 'Game' : 'Menu'} music started successfully`);
+              })
+              .catch(error => {
+                console.log("Autoplay was prevented:", error);
+              });
+          }
         }
       }
     };
 
-    // Try to play immediately when component mounts, only if not explicitly toggled off
-    if (!userToggledOff) {
-      attemptPlay();
-    }
+    // Try to play immediately when component mounts or difficulty changes
+    attemptPlay();
     
     // Add user interaction listener to help with autoplay policies
     const handleUserInteraction = () => {
-      if (audioElement && !isMusicPlaying && !userToggledOff) { // Check for userToggledOff here too
+      if (!isMusicPlaying && !userToggledOff) {
         attemptPlay();
         // Remove event listeners after first interaction
         document.removeEventListener('click', handleUserInteraction);
@@ -1889,7 +1900,7 @@ const PhotoFinishSystem = () => {
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
     };
-  }, [isMusicPlaying, userToggledOff]); // Add userToggledOff to dependencies
+  }, [isMusicPlaying, userToggledOff, difficulty]); // Add difficulty to dependencies
 
   // Fix the effect with the ESLint warning and add more logging for audio debugging
   useEffect(() => {
@@ -2003,10 +2014,16 @@ const PhotoFinishSystem = () => {
 
   return (
     <div className="main-container">
-      {/* Add audio elements at the app level */}
+      {/* Update audio elements */}
       <audio 
-        ref={audioRef}
+        ref={menuMusicRef}
         src={bgMusic}
+        loop={true}
+        preload="auto"
+      />
+      <audio 
+        ref={gameMusicRef}
+        src={countdownMusic}
         loop={true}
         preload="auto"
       />

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/racetimer/static/css/main.a25c432b.css",
-    "main.js": "/racetimer/static/js/main.9298b1a9.js",
+    "main.js": "/racetimer/static/js/main.c48314ac.js",
     "static/js/453.be891c9c.chunk.js": "/racetimer/static/js/453.be891c9c.chunk.js",
     "static/media/khoyu-hui-dhun.mp3": "/racetimer/static/media/khoyu-hui-dhun.be55c1865eecc8514064.mp3",
     "static/media/countdown.mp3": "/racetimer/static/media/countdown.8c84f5f8980e51ba5c0f.mp3",
@@ -9,15 +9,18 @@
     "static/media/Stopwatch.png": "/racetimer/static/media/Stopwatch.3f8fe6576545298b14ac.png",
     "static/media/running-sound.mp3": "/racetimer/static/media/running-sound.4016ad83194ce9741c28.mp3",
     "static/media/FingerPaint-Regular.ttf": "/racetimer/static/media/FingerPaint-Regular.3c3a9cdbff527a1cdb37.ttf",
+    "static/media/fail-sound.mp3": "/racetimer/static/media/fail-sound.43f7c49650377f770ebe.mp3",
+    "static/media/victory-sound.mp3": "/racetimer/static/media/victory-sound.37b45d4b4b0828435ef4.mp3",
     "static/media/starter-gun.mp3": "/racetimer/static/media/starter-gun.f7ee738f8b9daa709ed8.mp3",
+    "static/media/split-mark.mp3": "/racetimer/static/media/split-mark.97fd79673c8a8be35976.mp3",
     "static/media/Birds.png": "/racetimer/static/media/Birds.b74fde8c37fa6b146c5f.png",
     "index.html": "/racetimer/index.html",
     "main.a25c432b.css.map": "/racetimer/static/css/main.a25c432b.css.map",
-    "main.9298b1a9.js.map": "/racetimer/static/js/main.9298b1a9.js.map",
+    "main.c48314ac.js.map": "/racetimer/static/js/main.c48314ac.js.map",
     "453.be891c9c.chunk.js.map": "/racetimer/static/js/453.be891c9c.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.a25c432b.css",
-    "static/js/main.9298b1a9.js"
+    "static/js/main.c48314ac.js"
   ]
 }

@@ -8,16 +8,24 @@ import countdownMusic from './audio/countdown.mp3'; // Add new countdown music i
 import starterPistolSound from './audio/starter-gun.mp3';
 import stopwatchImage from './images/Stopwatch.png'
 import runningSoundFile from './audio/running-sound.mp3';
+import victorySound from './audio/victory-sound.mp3';
+import failSound from './audio/fail-sound.mp3';
+import splitSound from './audio/split-mark.mp3';
 // Replace the fancy card components with basic divs, or if you want to keep the UI components,
 // we can create simplified versions:
 
 
 // We create a larger pool of runners with varying speeds
 const createRunners = (count) => {
-  const colors = ['#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e8e810', '#00FFFF', '#FF8800', '#8800FF'];
+  const colors = ['#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e8e810', '#00FFFF', '#FF8800', '#8800FF', '#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e0b318c', '#579899', '#c4823b', '#512da62'];
   const names = [
     'Alice Smith', 'Bob Johnson', 'Carol Davis', 'David Wilson',
-    'Emma Brown', 'Frank Miller', 'Grace Taylor', 'Henry Moore'
+    'Emma Brown', 'Frank Miller', 'Grace Taylor', 'Henry Moore',
+    'Ivy Green', 'Jack White', 'Kyle Brown', 'Lily Davis',
+    'Mason Wilson', 'Nina Smith', 'Oliver Johnson', 'Pamela Davis',
+    'Quincy Wilson', 'Rachel Green', 'Samuel Brown', 'Tara Davis',
+    'Ulysses Johnson', 'Victoria Green', 'William Wilson', 'Xavier Brown',
+    'Yasmine Davis', 'Zachary Johnson'
   ];
   
   return colors.slice(0, count).map((color, index) => {
@@ -373,17 +381,17 @@ const DIFFICULTY_SETTINGS = {
   easy: {
     runners: 4,
     laps: 4,
-    duration: 180, // 3 minutes
+    duration: 60, // 1 minutes
   },
   medium: {
-    runners: 6,
+    runners: 8,
     laps: 6,
-    duration: 120, // 2 minutes
+    duration: 120, // 1.5 minutes
   },
   hard: {
-    runners: 8,
+    runners: 12,
     laps: 8,
-    duration: 120, // 2 minutes
+    duration: 180, // 2.5 minutes
   }
 };
 
@@ -645,7 +653,17 @@ const DifficultySelector = ({ onSelect, isMusicPlaying, toggleMusic }) => {
 };
 
 // Modify the OverlayContent component to handle the time's up scenario
-const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue, accuracyScore }) => {
+const OverlayContent = ({ 
+  gameStatus, 
+  badSplits, 
+  handleReset, 
+  handleContinue, 
+  accuracyScore,
+  timeScore,
+  combinedScore,
+  difficulty,
+  highScores
+}) => {
   const renderIncompleteContent = () => (
     <>
       <h1 style={{
@@ -710,51 +728,232 @@ const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue, ac
     
     // For win state
     return (
-      <>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        animation: 'fadeIn 1s ease-out',
+        padding: '20px',
+      }}>
         <h1 style={{
           color: '#4CAF50',
-          fontSize: '48px',
-          marginBottom: '20px',
+          fontSize: '15vh',
+          marginBottom: '0vh',
+          textTransform: 'uppercase',
+          fontWeight: 'bold',
+          textShadow: '0 0 20px rgba(76, 175, 80, 0.7)',
+          animation: 'pulse 1.5s infinite alternate',
         }}>
-          YOU WIN!
+          VICTORY!
         </h1>
-        <p style={{ color: 'white', fontSize: '24px', marginBottom: '20px' }}>
-          Congratulations, you have timed the race accurately!
+        <p style={{ 
+          color: 'white', 
+          fontSize: '2vh', 
+          fontWeight: 'bold',
+          marginBottom: '1vh',
+          textAlign: 'center',
+          maxWidth: '100%',
+          lineHeight: '1.2',
+          textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
+        }}>
+          Congratulations! You've successfully timed the race with precision and skill!
         </p>
-        {accuracyScore !== undefined && (
-          <div style={{ marginBottom: '30px' }}>
-            <h2 style={{ color: '#FFD700', fontSize: '32px', marginBottom: '10px' }}>
-              Accuracy Score
-            </h2>
-            <p style={{ 
-              color: '#FFD700', 
-              fontSize: '42px', 
-              fontWeight: 'bold',
-              textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-              margin: '0'
-            }}>
-              {accuracyScore.toFixed(2)}%
-            </p>
-            <p style={{ color: '#A9A9A9', fontSize: '16px', marginTop: '5px' }}>
-              (lower time difference = higher score)
-            </p>
+        
+        <div style={{ 
+          marginBottom: '2vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '80%',
+          maxWidth: '700px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '1vh',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            width: '100%',
+            flexWrap: 'wrap',
+            gap: '1vh',
+          }}>
+            {accuracyScore !== undefined && (
+              <div style={{ 
+                marginBottom: '1vh',
+                background: 'rgba(255,215,0,0.1)',
+                padding: '1vh',
+                borderRadius: '10px',
+                minWidth: '20%',
+                textAlign: 'center',
+                boxShadow: '0 5px 15px rgba(255,215,0,0.2)',
+              }}>
+                <h2 style={{ 
+                  color: '#FFD700', 
+                  fontSize: '2vh', 
+                  marginBottom: '0.5vh',
+                  letterSpacing: '1px',
+                }}>
+                  ACCURACY
+                </h2>
+                <p style={{ 
+                  color: '#FFD700', 
+                  fontSize: '3vh', 
+                  fontWeight: 'bold',
+                  textShadow: '0 0 15px rgba(255, 215, 0, 0.7)',
+                  margin: '0',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  {accuracyScore.toFixed(2)}%
+                </p>
+              </div>
+            )}
+            
+            {timeScore !== undefined && (
+              <div style={{ 
+                marginBottom: '1vh',
+                background: 'rgba(135,206,235,0.1)',
+                padding: '1vh',
+                borderRadius: '10px',
+                minWidth: '20%',
+                textAlign: 'center',
+                boxShadow: '0 5px 15px rgba(135,206,235,0.2)',
+              }}>
+                <h2 style={{ 
+                  color: '#87CEEB', 
+                  fontSize: '2vh', 
+                  marginBottom: '0.5vh',
+                  letterSpacing: '1px',
+                }}>
+                  TIME
+                </h2>
+                <p style={{ 
+                  color: '#87CEEB', 
+                  fontSize: '3vh', 
+                  fontWeight: 'bold',
+                  textShadow: '0 0 15px rgba(135, 206, 235, 0.7)',
+                  margin: '0',
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  {timeScore.toFixed(2)}%
+                </p>
+              </div>
+            )}
           </div>
-        )}
+          
+          {combinedScore !== undefined && (
+            <div style={{ 
+              marginTop: '1vh',
+              marginBottom: '1vh',
+              background: 'rgba(152,251,152,0.1)',
+              padding: '1vh',
+              borderRadius: '10px',
+              width: '70%',
+              textAlign: 'center',
+              boxShadow: '0 5px 15px rgba(152,251,152,0.3)',
+              border: '2dpx solid rgba(152,251,152,0.3)',
+            }}>
+              <h2 style={{ 
+                color: '#98FB98', 
+                fontSize: '3.5vh', 
+                marginBottom: '0vh',
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+              }}>
+                COMBINED SCORE
+              </h2>
+              <p style={{ 
+                color: '#98FB98', 
+                fontSize: '4vh', 
+                fontWeight: 'bold',
+                textShadow: '0 0 20px rgba(152, 251, 152, 0.8)',
+                margin: '0',
+                fontFamily: "'Courier New', monospace",
+              }}>
+                {combinedScore.toFixed(0)}
+              </p>
+            </div>
+          )}
+          
+          {difficulty && highScores[difficulty] > 0 && (
+            <div style={{ 
+              marginTop: '1vh',
+              background: 'rgba(255,165,0,0.1)',
+              padding: '1vh',
+              borderRadius: '10px',
+              textAlign: 'center',
+              boxShadow: '0 5px 15px rgba(255,165,0,0.2)',
+              border: '1px dashed rgba(255,165,0,0.5)',
+              width: '50%',
+            }}>
+              <h2 style={{ 
+                color: '#FFA500', 
+                fontSize: '1.8vh', 
+                marginBottom: '0.5vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5vh',
+              }}>
+                <span style={{ fontSize: '1.8vh', marginRight: '0.5vh' }}>🏆</span>
+                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} High Score
+              </h2>
+              <p style={{ 
+                color: '#FFA500', 
+                fontSize: '2.5vh', 
+                fontWeight: 'bold',
+                textShadow: '0 0 10px rgba(255, 165, 0, 0.7)',
+                margin: '0',
+                fontFamily: "'Courier New', monospace",
+              }}>
+                {highScores[difficulty].toFixed(0)}
+              </p>
+            </div>
+          )}
+        </div>
+        
         <button 
           onClick={handleReset}
           style={{
-            padding: '15px 30px',
-            fontSize: '20px',
+            padding: '1vh 2vh',
+            fontSize: '1.8vh',
             backgroundColor: '#2196F3',
             color: 'white',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '25px',
             cursor: 'pointer',
+            boxShadow: '0 5px 15px rgba(33, 150, 243, 0.4)',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.backgroundColor = '#0d8bf2';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 7px 20px rgba(33, 150, 243, 0.6)';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.backgroundColor = '#2196F3';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 5px 15px rgba(33, 150, 243, 0.4)';
           }}
         >
           Play Again
         </button>
-      </>
+        
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes pulse {
+            from { text-shadow: 0 0 20px rgba(76, 175, 80, 0.7); }
+            to { text-shadow: 0 0 30px rgba(76, 175, 80, 1), 0 0 40px rgba(76, 175, 80, 0.5); }
+          }
+        `}</style>
+      </div>
     );
   };
 
@@ -762,7 +961,18 @@ const OverlayContent = ({ gameStatus, badSplits, handleReset, handleContinue, ac
 };
 
 // Simplify the GameOverlay component
-const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleContinue, accuracyScore }) => {
+const GameOverlay = ({ 
+  gameStatus, 
+  isGameOver, 
+  badSplits, 
+  handleReset, 
+  handleContinue, 
+  accuracyScore,
+  timeScore,
+  combinedScore,
+  difficulty,
+  highScores 
+}) => {
   console.log("GameOverlay render: ", {gameStatus, isGameOver});
   
   if (!isGameOver) {
@@ -790,6 +1000,10 @@ const GameOverlay = ({ gameStatus, isGameOver, badSplits, handleReset, handleCon
         handleReset={handleReset}
         handleContinue={handleContinue}
         accuracyScore={accuracyScore}
+        timeScore={timeScore}
+        combinedScore={combinedScore}
+        difficulty={difficulty}
+        highScores={highScores}
       />
     </div>
   );
@@ -846,6 +1060,14 @@ const PhotoFinishSystem = () => {
 
   // Add this ref with the other refs in PhotoFinishSystem
   const runningSoundRef = useRef(null);
+
+  // Add state for high scores
+  const [highScores, setHighScores] = useState(() => {
+    const savedScores = localStorage.getItem('raceHighScores');
+    return savedScores ? JSON.parse(savedScores) : { easy: 0, medium: 0, hard: 0 };
+  });
+  const [timeScore, setTimeScore] = useState(null);
+  const [combinedScore, setCombinedScore] = useState(null);
 
   // New function to calculate accuracy score
   const calculateAccuracyScore = useCallback(() => {
@@ -956,7 +1178,21 @@ const PhotoFinishSystem = () => {
   // Add state for accuracy score
   const [accuracyScore, setAccuracyScore] = useState(null);
 
-  // Update checkAndHandleGameCompletion to calculate accuracy score
+  // Add calculateTimeScore function
+  const calculateTimeScore = useCallback(() => {
+    if (!difficulty || !DIFFICULTY_SETTINGS[difficulty]) return 0;
+    
+    const maxTime = DIFFICULTY_SETTINGS[difficulty].duration;
+    const timeLeft = gameTime;
+    
+    // Calculate time score: 100% if all time left, 0% if no time left
+    // Linear scale between these points
+    const timeScore = (timeLeft / maxTime) * 100;
+    console.log(`Time score: ${timeScore.toFixed(2)}% (${timeLeft}s left out of ${maxTime}s)`);
+    return timeScore;
+  }, [difficulty, gameTime]);
+
+  // Update checkAndHandleGameCompletion to include time score
   const checkAndHandleGameCompletion = useCallback((timeUp = false) => {
     console.log("Checking game status...");
     
@@ -984,12 +1220,38 @@ const PhotoFinishSystem = () => {
     });
     
     // WIN condition: All runners have all splits AND all splits are good
-    if (allRunnersFinished && validSplits.length === totalRequiredSplitsRef.current) {
+    if (allRunnersFinished && validSplits.length === totalRequiredSplitsRef.current && badSplits === 0) {
       console.log("VICTORY! All splits are good and every runner has all required splits");
-      // Calculate accuracy score
-      const score = calculateAccuracyScore();
-      setAccuracyScore(score);
-      console.log(`Game won with accuracy score: ${score.toFixed(2)}%`);
+      // Calculate scores
+      const accuracyScoreValue = calculateAccuracyScore();
+      const timeScoreValue = calculateTimeScore();
+      
+      // New combined score calculation based on difficulty
+      let combinedScoreValue;
+      if (difficulty === 'easy') {
+        combinedScoreValue = (accuracyScoreValue * 100) + (timeScoreValue * 100);
+      } else if (difficulty === 'medium') {
+        combinedScoreValue = (accuracyScoreValue * 100) + (timeScoreValue * 200);
+      } else { // hard
+        combinedScoreValue = (accuracyScoreValue * 100) + (timeScoreValue * 300);
+      }
+      
+      console.log(`Game won with scores:
+        Accuracy: ${accuracyScoreValue.toFixed(2)}%
+        Time: ${timeScoreValue.toFixed(2)}%
+        Combined: ${combinedScoreValue.toFixed(2)} points`);
+      
+      setAccuracyScore(accuracyScoreValue);
+      setTimeScore(timeScoreValue);
+      setCombinedScore(combinedScoreValue);
+      
+      // Update high score if current score is higher
+      if (combinedScoreValue > highScores[difficulty]) {
+        const newHighScores = { ...highScores, [difficulty]: combinedScoreValue };
+        setHighScores(newHighScores);
+        localStorage.setItem('raceHighScores', JSON.stringify(newHighScores));
+      }
+      
       setGameStatus('won');
       setIsGameOver(true);
       setIsPlaying(false);
@@ -1009,7 +1271,8 @@ const PhotoFinishSystem = () => {
       setIsGameOver(true);
       setIsPlaying(false);
     }
-  }, [runners, splits, deletedSplits, badSplits, goodSplits, requiredSplitsPerRunner, checkIncomplete, calculateAccuracyScore]);
+  }, [splits, deletedSplits, badSplits, goodSplits, requiredSplitsPerRunner, checkIncomplete, 
+      calculateAccuracyScore, calculateTimeScore, difficulty, highScores, runners]);
 
   // Update handleDeleteSplit to reassess neighboring splits
   const handleDeleteSplit = (splitId) => {
@@ -1166,6 +1429,13 @@ const PhotoFinishSystem = () => {
     const bibNumber = parseInt(currentBibInput);
     
     if (bibNumber && selectedTime !== null) {
+      // Play the split sound
+      if (splitSoundRef.current) {
+        splitSoundRef.current.volume = 0.7;
+        splitSoundRef.current.currentTime = 0;
+        splitSoundRef.current.play().catch(e => console.log("Split sound failed:", e));
+      }
+
       // Re-enable incomplete checking when a new split is created
       setCheckIncomplete(true);
       
@@ -1872,7 +2142,7 @@ const PhotoFinishSystem = () => {
     return (
       <div style={{
         position: 'fixed',
-        bottom: '20px',
+        top: '5px',
         left: '20px',
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         padding: '10px',
@@ -1956,6 +2226,9 @@ const PhotoFinishSystem = () => {
 
   // Add a new state to track if music is explicitly turned off by user
   const [userToggledOff, setUserToggledOff] = useState(false);
+  // Add refs for victory and fail sounds
+  const victorySoundRef = useRef(null);
+  const failSoundRef = useRef(null);
 
   // Modify the toggleMusic function to handle both audio tracks
   const toggleMusic = () => {
@@ -2177,6 +2450,22 @@ const PhotoFinishSystem = () => {
     }
   }, [difficulty, runners]);
 
+  // Add useEffect to handle victory and fail sounds
+  useEffect(() => {
+    if (gameStatus === 'won' && victorySoundRef.current) {
+      victorySoundRef.current.volume = 0.7; // Set appropriate volume
+      victorySoundRef.current.currentTime = 0; // Reset to start
+      victorySoundRef.current.play().catch(e => console.log("Victory sound failed:", e));
+    } else if (gameStatus === 'lost' && failSoundRef.current) {
+      failSoundRef.current.volume = 0.7; // Set appropriate volume
+      failSoundRef.current.currentTime = 0; // Reset to start
+      failSoundRef.current.play().catch(e => console.log("Fail sound failed:", e));
+    }
+  }, [gameStatus]);
+
+  // Add splitSoundRef with other refs
+  const splitSoundRef = useRef(null);
+
   return (
     <div className="main-container">
       {/* Update audio elements */}
@@ -2202,6 +2491,21 @@ const PhotoFinishSystem = () => {
         src={runningSoundFile}
         preload="auto"
       />
+      <audio 
+        ref={victorySoundRef}
+        src={victorySound}
+        preload="auto"
+      />
+      <audio 
+        ref={failSoundRef}
+        src={failSound}
+        preload="auto"
+      />
+      <audio 
+        ref={splitSoundRef}
+        src={splitSound}
+        preload="auto"
+      />
       
       {!difficulty && 
         <DifficultySelector 
@@ -2217,6 +2521,10 @@ const PhotoFinishSystem = () => {
         handleReset={handleReset}
         handleContinue={handleContinue}
         accuracyScore={accuracyScore}
+        timeScore={timeScore}
+        combinedScore={combinedScore}
+        difficulty={difficulty}
+        highScores={highScores}
       />
       <PauseOverlay />
       <GameTimer />

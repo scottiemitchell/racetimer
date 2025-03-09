@@ -17,7 +17,7 @@ import splitSound from './audio/split-mark.mp3';
 
 // We create a larger pool of runners with varying speeds
 const createRunners = (count) => {
-  const colors = ['#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e8e810', '#00FFFF', '#FF8800', '#8800FF', '#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e0b318c', '#579899', '#c4823b', '#512da62'];
+  const colors = ['#FF0000', '#06b52e', '#0000FF', '#FF00FF', '#e8e810', '#00FFFF', '#FF8800', '#8800FF', '#000066', '#ebd262', '#3eb7ac', '#444444', '#f39c12', '#d5332f', '#c4823b', '#5122a62'];
   const names = [
     'Alice Smith', 'Bob Johnson', 'Carol Davis', 'David Wilson',
     'Emma Brown', 'Frank Miller', 'Grace Taylor', 'Henry Moore',
@@ -30,9 +30,9 @@ const createRunners = (count) => {
   
   return colors.slice(0, count).map((color, index) => {
     // Increase speed variation range
-    const baseSpeed = 1.5 + (Math.random() * 0.8); // Base speed varies between 1.5 and 2.3
+    const baseSpeed = 1.5 + (Math.random() * 1.4); // Base speed varies between 1.5 and 2.3
     const speedVariations = [];
-    const variationPoints = 30; // Increased variation points for more frequent changes
+    const variationPoints = 10; // Increased variation points for more frequent changes
     
     // Generate more dramatic speed variations, but without random jitter
     for (let i = 0; i < variationPoints; i++) {
@@ -43,9 +43,9 @@ const createRunners = (count) => {
       });
     }
 
-    // Reduce frequency of lane changes and add bias towards lane 1
+    // Rece frequency of lane changes and add bias towards lane 1
     const laneVariations = [];
-    const laneVariationPoints = 10; // Reduced from 40 for less frequent changes
+    const laneVariationPoints = 5; // Reduced from 40 for less frequent changes
     
     for (let i = 0; i < laneVariationPoints; i++) {
       const distancePoint = (i / laneVariationPoints) * 100;
@@ -107,9 +107,17 @@ const createRunners = (count) => {
         // Calculate lane position with modified variations
         const laneVariationIndex = Math.floor(lapProgress * laneVariationPoints / 100);
         const laneVariation = laneVariations[laneVariationIndex];
-        const baseY = 20 + (index * 10);
+        
+        // Dynamically scale the vertical spacing based on the total expected runners
+        // This ensures that even with 14+ runners, they all remain in view
+        const maxRunners = 16; // Maximum number of runners we expect
+        const verticalSpacing = 75 / maxRunners; // Use 75% of the canvas height for spacing
+        
+        // Add 15 as a padding from the top of the canvas
+        const baseY = 15 + (index * verticalSpacing);
+        
         // Apply lane variation based on current lap
-        const adjustedY = baseY - (laneVariation.offset(lap) * 10);
+        const adjustedY = baseY - (laneVariation.offset(lap) * verticalSpacing);
         
         return {
           x: 100 - lapProgress,
@@ -122,7 +130,6 @@ const createRunners = (count) => {
     };
   });
 };
-
 const TOTAL_LAPS = 8;
 const FINISH_LINE_X = 25;
 const CANVAS_WIDTH = 600;
@@ -224,8 +231,7 @@ const ResultsTable = ({
 
   return (
     <div className="h-full bg-gray-900 rounded-lg border border-gray-700">
-      <div className="p-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-white">Race Results</h3>
+      <div className="p-4 border-b border-gray-700" style={{ paddingTop: '10vh' }}>
       </div>
       <div className="overflow-auto h-[calc(100%-4rem)]">
         <table className="w-full text-sm text-gray-200">
@@ -386,12 +392,12 @@ const DIFFICULTY_SETTINGS = {
   medium: {
     runners: 8,
     laps: 6,
-    duration: 120, // 1.5 minutes
+    duration: 120, // 2 minutes
   },
   hard: {
-    runners: 12,
+    runners: 14,
     laps: 8,
-    duration: 180, // 2.5 minutes
+    duration: 180, // 3 minutes
   }
 };
 
@@ -748,7 +754,8 @@ const OverlayContent = ({
         </h1>
         <p style={{ 
           color: 'white', 
-          fontSize: '2vh', 
+          fontSize: '3vh', 
+          fontFamily: 'fantasy',
           fontWeight: 'bold',
           marginBottom: '1vh',
           textAlign: 'center',
@@ -856,6 +863,7 @@ const OverlayContent = ({
               <h2 style={{ 
                 color: '#98FB98', 
                 fontSize: '3.5vh', 
+                fontFamily: 'monospace',
                 marginBottom: '0vh',
                 letterSpacing: '2px',
                 textTransform: 'uppercase',
@@ -868,7 +876,7 @@ const OverlayContent = ({
                 fontWeight: 'bold',
                 textShadow: '0 0 20px rgba(152, 251, 152, 0.8)',
                 margin: '0',
-                fontFamily: "'Courier New', monospace",
+                fontFamily: "monospace",
               }}>
                 {combinedScore.toFixed(0)}
               </p>
@@ -883,24 +891,24 @@ const OverlayContent = ({
               borderRadius: '10px',
               textAlign: 'center',
               boxShadow: '0 5px 15px rgba(255,165,0,0.2)',
-              border: '1px dashed rgba(255,165,0,0.5)',
+              //border: '1px dashed rgba(255,165,0,0.5)',
               width: '50%',
             }}>
               <h2 style={{ 
                 color: '#FFA500', 
-                fontSize: '1.8vh', 
+                fontSize: '3,8vh', 
                 marginBottom: '0.5vh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5vh',
               }}>
-                <span style={{ fontSize: '1.8vh', marginRight: '0.5vh' }}>🏆</span>
+                <span style={{ fontSize: '3,8vh', marginRight: '0.5vh' }}>🏆</span>
                 {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} High Score
               </h2>
               <p style={{ 
                 color: '#FFA500', 
-                fontSize: '2.5vh', 
+                fontSize: '4.5vh', 
                 fontWeight: 'bold',
                 textShadow: '0 0 10px rgba(255, 165, 0, 0.7)',
                 margin: '0',
@@ -1389,7 +1397,7 @@ const PhotoFinishSystem = () => {
             setIsPlaying(false);
             return time;
           }
-          return time + 0.5;
+          return time + 0.25;
         });
         animationFrameRef.current = requestAnimationFrame(animate);
       };
@@ -1853,7 +1861,7 @@ const PhotoFinishSystem = () => {
           if (animatedPos.lap < totalLaps) {
             const x = animatedPos.x * CANVAS_WIDTH / 100;
             // Increase the capture window slightly
-            if (Math.abs(x - sliceX) <= RUNNER_SIZE * 1.5) {  // Increased from RUNNER_SIZE to RUNNER_SIZE * 1.5
+            if (Math.abs(x - sliceX) <= RUNNER_SIZE * 2) {  // Increased from RUNNER_SIZE to RUNNER_SIZE * 1.5
               const y = animatedPos.y * CANVAS_HEIGHT / 100;
               
               // Draw head (small circle above runner)
@@ -1870,7 +1878,7 @@ const PhotoFinishSystem = () => {
                 SLICE_WIDTH/2 - RUNNER_SIZE/2, 
                 y - RUNNER_SIZE/2, 
                 RUNNER_SIZE *1.5, 
-                RUNNER_SIZE * 6
+                RUNNER_SIZE * 10
               );
               
               /*Draw left leg (vertical line) - make it more visible
